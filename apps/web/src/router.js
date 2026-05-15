@@ -1,0 +1,25 @@
+import { createRouter, createWebHistory } from 'vue-router';
+import AuthPage from './views/AuthPage.vue';
+import CopywritingPage from './views/CopywritingPage.vue';
+import HomePage from './views/HomePage.vue';
+import StocksPage from './views/StocksPage.vue';
+import { useAuthStore } from './stores/auth';
+export const router = createRouter({
+    history: createWebHistory(),
+    routes: [
+        { path: '/auth', name: 'auth', component: AuthPage },
+        { path: '/', name: 'home', component: HomePage },
+        { path: '/copywriting', name: 'copywriting', component: CopywritingPage },
+        { path: '/stocks', name: 'stocks', component: StocksPage },
+    ],
+});
+router.beforeEach((to) => {
+    const authStore = useAuthStore();
+    if (to.name !== 'auth' && !authStore.token) {
+        return { name: 'auth' };
+    }
+    if (to.name === 'auth' && authStore.token) {
+        return { name: 'home' };
+    }
+    return true;
+});

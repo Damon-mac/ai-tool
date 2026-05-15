@@ -1,0 +1,31 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: ai-lab-api
+    restart: unless-stopped
+    env_file:
+      - ${API_ENV_FILE:-./.env.local}
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      APP_ORIGIN: http://localhost
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-anthropic}
+      MODEL_MAX_TOKENS: ${MODEL_MAX_TOKENS:-2200}
+      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-20000}
+    ports:
+      - '3000:3000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    container_name: ai-lab-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'

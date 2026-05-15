@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CopyPlatform {
+  xiaohongshu
+  douyin
+  moments
+}
+
+enum CopyContentType {
+  video
+  image_text
+  product_ad
+}
+
+enum RecommendationLevel {
+  buy
+  hold
+  sell
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+}
+
+model User {
+  id                   String               @id @default(cuid())
+  email                String               @unique
+  passwordHash         String
+  name                 String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  copywritingHistories CopywritingHistory[]
+  copywritingFavorites CopywritingFavorite[]
+  trackedStocks        TrackedStock[]
+  stockCompareHistory  StockCompareHistory[]
+}
+
+model CopywritingHistory {
+  id          String                @id @default(cuid())
+  userId      String
+  topic       String
+  platform    CopyPlatform
+  contentType CopyContentType
+  results     Json
+  createdAt   DateTime              @default(now())
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites   CopywritingFavorite[]
+
+  @@index([userId, createdAt])
+}
+
+model CopywritingFavorite {
+  id         String             @id @default(cuid())
+  userId     String
+  historyId  String
+  itemIndex  Int
+  content    String
+  styleTag   String
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  history    CopywritingHistory @relation(fields: [historyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, historyId, itemIndex])
+  @@index([userId, createdAt])
+}
+
+model TrackedStock {
+  id             String          @id @default(cuid())
+  userId         String
+  code           String
+  name           String
+  market         String
+  secId          String
+  latestPrice    Float?
+  lastAnalyzedAt DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshots      StockSnapshot[]
+  analyses       StockAnalysis[]
+
+  @@unique([userId, code])
+  @@index([userId, updatedAt])
+}
+
+model StockSnapshot {
+  id             String       @id @default(cuid())
+  trackedStockId String
+  price          Float
+  changePercent  Float
+  volume         Float?
+  turnover       Float?
+  high           Float?
+  low            Float?
+  open           Float?
+  previousClose  Float?
+  marketCap      Float?
+  peRatio        Float?
+  pbRatio        Float?
+  mainFundFlow   Float?
+  collectedAt    DateTime     @default(now())
+  rawJson        Json
+  trackedStock   TrackedStock @relation(fields: [trackedStockId], references: [id], onDelete: Cascade)
+
+  @@index([trackedStockId, collectedAt])
+}
+
+model StockAnalysis {
+  id                 String              @id @default(cuid())
+  trackedStockId     String
+  summary            String
+  trend              String
+  valuation          String
+  sentiment          String
+  riskLevel          RiskLevel
+  recommendation     RecommendationLevel
+  reasons            Json
+  weekPrediction     Json
+  monthPrediction    Json
+  yearPrediction     Json
+  positionSuggestion String
+  sourceData         Json
+  createdAt          DateTime            @default(now())
+  trackedStock       TrackedStock        @relation(fields: [trackedStockId], references: [id], onDelete: Cascade)
+
+  @@index([trackedStockId, createdAt])
+}
+
+model StockCompareHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  codes     String[]
+  result    Json
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}

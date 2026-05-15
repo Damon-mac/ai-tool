@@ -1,0 +1,22 @@
+{
+  "name": "ai-lab",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run start:dev --workspace @ai-lab/api\" \"npm run dev --workspace @ai-lab/web\"",
+    "dev:web": "npm run dev --workspace @ai-lab/web",
+    "dev:api": "npm run start:dev --workspace @ai-lab/api",
+    "build": "npm run build --workspace @ai-lab/shared && npm run build --workspace @ai-lab/api && npm run build --workspace @ai-lab/web",
+    "prisma:generate": "npm run prisma:generate --workspace @ai-lab/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace @ai-lab/api",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
