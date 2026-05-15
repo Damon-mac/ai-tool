@@ -49,12 +49,12 @@ ai-lab/
 复制 `.env.template` 为 `.env.local`，或复制 `.env.production.template` 为 `.env.production` 后填写：
 
 ```bash
-DB_HOST=47.98.196.52
+DB_HOST=replace-with-test-db-host
 DB_PORT=5432
-DB_USERNAME=root
+DB_USERNAME=replace-with-test-db-username
 DB_PASSWORD=replace-with-db-password
 DB_NAME=ai_tool
-DATABASE_URL=postgresql://root:replace-with-db-password@47.98.196.52:5432/ai_tool?schema=public
+DATABASE_URL=postgresql://replace-with-test-db-username:replace-with-db-password@replace-with-test-db-host:5432/ai_tool?schema=public
 JWT_SECRET=replace-with-a-long-random-secret
 MODEL_BASE_URL=https://api.xiaomimimo.com/anthropic
 MODEL_API_KEY=replace-with-model-api-key
@@ -87,10 +87,10 @@ npm install
 npm run prisma:generate
 ```
 
-### 3. 启动数据库
+### 3. 准备环境变量
 
 ```bash
-docker compose up -d db
+cp .env.template .env.local
 ```
 
 ### 4. 执行迁移
