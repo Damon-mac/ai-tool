@@ -4,11 +4,13 @@ type __VLS_Props = {
     eyebrow?: string;
     backTo?: string;
     backLabel?: string;
+    compact?: boolean;
 };
 declare const _default: import("vue").DefineComponent<__VLS_Props, {}, {}, {}, {}, import("vue").ComponentOptionsMixin, import("vue").ComponentOptionsMixin, {}, string, import("vue").PublicProps, Readonly<__VLS_Props> & Readonly<{}>, {
-    eyebrow: string;
     subtitle: string;
+    eyebrow: string;
     backTo: string;
     backLabel: string;
+    compact: boolean;
 }, {}, {}, {}, string, import("vue").ComponentProvideOptions, false, {}, any>;
 export default _default;

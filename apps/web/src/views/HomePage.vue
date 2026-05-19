@@ -51,6 +51,14 @@ const featureCards: FeatureCard[] = [
     cta: '进入股票诊断',
     points: ['单股诊断与跟踪', '2-3 只股票仓位对比', '后续可继续扩展更多功能卡片'],
   },
+  {
+    title: '模型配置',
+    eyebrow: 'Model Config',
+    description: '统一管理当前生效的大模型地址、API Key、模型名称和 Provider，避免混用多份 env。',
+    path: '/model-config',
+    cta: '进入模型配置',
+    points: ['页面配置优先于 env', '支持恢复 env 默认值', '适合切换 DeepSeek / Anthropic / OpenAI 兼容模型'],
+  },
 ];
 
 async function initialize() {

@@ -119,9 +119,11 @@ docker compose up --build
 
 默认服务：
 
-- Web: `http://localhost`
-- API: `http://localhost:3000/api`
-- PostgreSQL: `localhost:5432`
+- Web: `http://localhost:8080`
+- API: `http://localhost:3005/api`
+- Swagger: `http://localhost:3005/api/docs`
+
+数据库通过环境变量连接远程 PostgreSQL。
 
 ## 数据与风控说明
 

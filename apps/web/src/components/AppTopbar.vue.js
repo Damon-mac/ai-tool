@@ -6,6 +6,7 @@ const props = withDefaults(defineProps(), {
     eyebrow: 'AI Lab',
     backTo: '',
     backLabel: '返回首页',
+    compact: false,
 });
 const router = useRouter();
 const authStore = useAuthStore();
@@ -26,12 +27,13 @@ const __VLS_withDefaultsArg = (function (t) { return t; })({
     eyebrow: 'AI Lab',
     backTo: '',
     backLabel: '返回首页',
+    compact: false,
 });
 const __VLS_ctx = {};
 let __VLS_components;
 let __VLS_directives;
 __VLS_asFunctionalElement(__VLS_intrinsicElements.header, __VLS_intrinsicElements.header)({
-    ...{ class: "topbar glass-card" },
+    ...{ class: (['topbar', 'glass-card', { 'topbar-compact': __VLS_ctx.compact }]) },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
     ...{ class: "topbar-copy" },
@@ -72,8 +74,6 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElement
     ...{ onClick: (__VLS_ctx.logout) },
     ...{ class: "ghost-btn" },
 });
-/** @type {__VLS_StyleScopedClasses['topbar']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['topbar-copy']} */ ;
 /** @type {__VLS_StyleScopedClasses['eyebrow']} */ ;
 /** @type {__VLS_StyleScopedClasses['hero-copy']} */ ;

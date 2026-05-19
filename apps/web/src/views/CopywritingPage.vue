@@ -10,15 +10,6 @@ interface CopywritingItem {
   styleTag: string;
 }
 
-interface CopyHistoryRecord {
-  id: string;
-  topic: string;
-  platform: string;
-  contentType: string;
-  results: CopywritingItem[];
-  createdAt: string;
-}
-
 interface FavoriteRecord {
   id: string;
   content: string;
@@ -30,9 +21,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const errorMessage = ref('');
-const copyHistory = ref<CopyHistoryRecord[]>([]);
 const favorites = ref<FavoriteRecord[]>([]);
 const copyResult = ref<{ historyId: string; items: CopywritingItem[] } | null>(null);
+const favoritesVisible = ref(false);
 
 const copyForm = reactive({
   topic: '',
@@ -52,41 +43,21 @@ const contentTypeOptions = [
   { label: '产品广告', value: 'product_ad' },
 ];
 
-const platformLabels: Record<string, string> = {
-  xiaohongshu: '小红书',
-  douyin: '抖音',
-  moments: '朋友圈',
-};
-
-const contentTypeLabels: Record<string, string> = {
-  video: '视频',
-  image_text: '图文',
-  product_ad: '产品广告',
-};
-
 async function initialize() {
   if (!authStore.token) {
     await router.push('/auth');
     return;
   }
   await authStore.fetchProfile();
-  await loadCollections();
+  await loadFavorites();
 }
 
-async function loadCollections() {
+async function loadFavorites() {
   const token = authStore.token;
   if (!token) {
     return;
   }
-  const [history, favs] = await Promise.all([
-    apiFetch<CopyHistoryRecord[]>('/copywriting/history', {}, token),
-    apiFetch<FavoriteRecord[]>('/copywriting/favorites', {}, token),
-  ]);
-  copyHistory.value = history.map((item) => ({
-    ...item,
-    results: Array.isArray(item.results) ? item.results : [],
-  }));
-  favorites.value = favs;
+  favorites.value = await apiFetch<FavoriteRecord[]>('/copywriting/favorites', {}, token);
 }
 
 async function generateCopywriting() {
@@ -101,7 +72,6 @@ async function generateCopywriting() {
       method: 'POST',
       body: JSON.stringify(copyForm),
     }, token);
-    await loadCollections();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '生成失败';
   } finally {
@@ -123,7 +93,8 @@ async function favoriteItem(item: CopywritingItem, index: number) {
       styleTag: item.styleTag,
     }),
   }, token);
-  await loadCollections();
+  await loadFavorites();
+  favoritesVisible.value = true;
 }
 
 async function removeFavorite(id: string) {
@@ -132,7 +103,7 @@ async function removeFavorite(id: string) {
     return;
   }
   await apiFetch(`/copywriting/favorites/${id}`, { method: 'DELETE' }, token);
-  await loadCollections();
+  await loadFavorites();
 }
 
 async function copyText(content: string) {
@@ -145,33 +116,25 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="dashboard-shell">
+  <div class="dashboard-shell tool-page-shell">
     <AppTopbar
       title="文案推荐"
       subtitle="专注做一个功能：围绕你的主题，生成 10 条可直接使用的中文爆款开头。"
       back-to="/"
+      compact
     />
 
-    <section class="summary-grid two-up-grid">
-      <div class="summary-card glass-card">
-        <span>文案历史</span>
-        <strong>{{ copyHistory.length }}</strong>
-        <small>累计生成记录</small>
-      </div>
-      <div class="summary-card glass-card">
-        <span>收藏夹</span>
-        <strong>{{ favorites.length }}</strong>
-        <small>高价值文案沉淀</small>
-      </div>
-    </section>
-
-    <section class="feature-grid">
-      <div class="glass-card feature-panel form-panel">
-        <div class="panel-header">
+    <section class="page-stack plain-page-stack">
+      <div class="plain-section">
+        <div class="section-heading">
           <div>
             <p class="eyebrow">Copywriting Lab</p>
-            <h2>生成 10 条不同风格爆款开头</h2>
+            <h2>先输入，再一键生成</h2>
+            <p class="helper-text">围绕你的主题生成 10 条不同风格文案，结果直接展示在下方。</p>
           </div>
+          <el-button class="ghost-btn ui-btn" plain @click="favoritesVisible = true">
+            收藏夹（{{ favorites.length }}）
+          </el-button>
         </div>
 
         <div class="form-stack">
@@ -213,75 +176,54 @@ onMounted(() => {
           </div>
 
           <p v-if="errorMessage" class="error-text">{{ errorMessage }}</p>
-          <el-button class="primary-btn ui-btn" type="primary" size="large" :loading="loading" :disabled="!copyForm.topic.trim()" @click="generateCopywriting">
-            {{ loading ? '生成中...' : '一键生成 10 条文案' }}
-          </el-button>
+          <div class="section-actions">
+            <el-button class="primary-btn ui-btn" type="primary" size="large" :loading="loading" :disabled="!copyForm.topic.trim()" @click="generateCopywriting">
+              {{ loading ? '生成中...' : '一键生成 10 条文案' }}
+            </el-button>
+          </div>
         </div>
       </div>
 
-      <div class="glass-card feature-panel result-panel">
-        <div class="panel-header">
+      <div class="plain-section">
+        <div class="section-heading compact-heading">
           <div>
             <p class="eyebrow">Results</p>
-            <h2>本次生成结果</h2>
+            <h2>生成结果</h2>
           </div>
         </div>
 
-        <div v-if="copyResult?.items?.length" class="result-list">
-          <article v-for="(item, index) in copyResult.items" :key="`${item.styleTag}-${index}`" class="result-card">
-            <div class="result-card-header">
-              <el-tag class="tag-chip ui-tag" effect="dark" round>{{ item.styleTag }}</el-tag>
-              <span class="muted-index">#{{ index + 1 }}</span>
+        <div v-if="copyResult?.items?.length" class="plain-result-list">
+          <article v-for="(item, index) in copyResult.items" :key="`${item.styleTag}-${index}`" class="result-row">
+            <div class="result-row-top">
+              <div class="result-row-meta">
+                <el-tag class="tag-chip ui-tag" effect="dark" round>{{ item.styleTag }}</el-tag>
+                <span class="muted-index">#{{ index + 1 }}</span>
+              </div>
+              <div class="card-actions">
+                <el-button class="ghost-btn ui-btn" plain @click="copyText(item.content)">复制</el-button>
+                <el-button class="ghost-btn ui-btn" plain @click="favoriteItem(item, index)">收藏</el-button>
+              </div>
             </div>
-            <p>{{ item.content }}</p>
-            <div class="card-actions">
-              <el-button class="ghost-btn ui-btn" plain @click="copyText(item.content)">复制</el-button>
-              <el-button class="ghost-btn ui-btn" plain @click="favoriteItem(item, index)">收藏</el-button>
-            </div>
+            <p class="result-row-content">{{ item.content }}</p>
           </article>
         </div>
-        <div v-else class="empty-state">
+        <div v-else class="empty-state simple-empty-state">
           输入主题、平台和内容类型后，这里会展示 10 条不同风格结果。
         </div>
       </div>
-
-      <div class="glass-card feature-panel history-panel">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">History</p>
-            <h2>历史记录</h2>
-          </div>
-        </div>
-
-        <div class="mini-list">
-          <article v-for="item in copyHistory" :key="item.id" class="mini-card">
-            <strong>{{ item.topic }}</strong>
-            <small>{{ platformLabels[item.platform] }} · {{ contentTypeLabels[item.contentType] }}</small>
-            <p>{{ item.results?.[0]?.content || '暂无内容' }}</p>
-          </article>
-          <div v-if="!copyHistory.length" class="empty-state compact">还没有生成历史。</div>
-        </div>
-      </div>
-
-      <div class="glass-card feature-panel history-panel">
-        <div class="panel-header">
-          <div>
-            <p class="eyebrow">Favorites</p>
-            <h2>收藏夹</h2>
-          </div>
-        </div>
-
-        <div class="mini-list">
-          <article v-for="item in favorites" :key="item.id" class="mini-card">
-            <div class="result-card-header">
-              <el-tag class="tag-chip ui-tag" effect="dark" round>{{ item.styleTag }}</el-tag>
-              <el-button class="text-btn ui-text-btn" text @click="removeFavorite(item.id)">删除</el-button>
-            </div>
-            <p>{{ item.content }}</p>
-          </article>
-          <div v-if="!favorites.length" class="empty-state compact">你收藏的文案会显示在这里。</div>
-        </div>
-      </div>
     </section>
+
+    <el-dialog v-model="favoritesVisible" title="收藏夹" width="720px" class="favorites-dialog">
+      <div v-if="favorites.length" class="dialog-list">
+        <article v-for="item in favorites" :key="item.id" class="dialog-item">
+          <div class="result-row-top">
+            <el-tag class="tag-chip ui-tag" effect="dark" round>{{ item.styleTag }}</el-tag>
+            <el-button class="text-btn ui-text-btn" text @click="removeFavorite(item.id)">删除</el-button>
+          </div>
+          <p class="result-row-content">{{ item.content }}</p>
+        </article>
+      </div>
+      <div v-else class="empty-state simple-empty-state compact">你收藏的文案会显示在这里。</div>
+    </el-dialog>
   </div>
 </template>

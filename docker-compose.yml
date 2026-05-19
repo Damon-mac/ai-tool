@@ -15,7 +15,7 @@ services:
       MODEL_MAX_TOKENS: ${MODEL_MAX_TOKENS:-2200}
       MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-20000}
     ports:
-      - '3000:3000'
+      - '3005:3000'
 
   web:
     build:
@@ -28,4 +28,4 @@ services:
     depends_on:
       - api
     ports:
-      - '80:80'
+      - '8080:80'

@@ -6,6 +6,7 @@ coverage
 *.log
 .env
 .env.local
+.model-config.local.json
 .env.production
 .env.production.local
 .env.*.local

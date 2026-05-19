@@ -13,7 +13,8 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const email = this.normalizeEmail(dto.email);
+    const existing = await this.prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new ConflictException('该邮箱已注册');
     }
@@ -21,7 +22,7 @@ export class AuthService {
     const passwordHash = await hash(dto.password, 10);
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         passwordHash,
         name: dto.name,
       },
@@ -31,12 +32,23 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.prisma.user.findUnique({ where: { email: dto.email } });
+    const email = this.normalizeEmail(dto.email);
+    const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new UnauthorizedException('邮箱或密码错误');
     }
 
-    const passwordMatched = await compare(dto.password, user.passwordHash);
+    if (!user.passwordHash) {
+      throw new UnauthorizedException('邮箱或密码错误');
+    }
+
+    let passwordMatched = false;
+    try {
+      passwordMatched = await compare(dto.password, user.passwordHash);
+    } catch {
+      throw new UnauthorizedException('邮箱或密码错误');
+    }
+
     if (!passwordMatched) {
       throw new UnauthorizedException('邮箱或密码错误');
     }
@@ -65,5 +77,9 @@ export class AuthService {
         name: name ?? null,
       },
     };
+  }
+
+  private normalizeEmail(email: string) {
+    return email.trim().toLowerCase();
   }
 }

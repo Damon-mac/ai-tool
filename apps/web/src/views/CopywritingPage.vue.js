@@ -7,9 +7,9 @@ const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const errorMessage = ref('');
-const copyHistory = ref([]);
 const favorites = ref([]);
 const copyResult = ref(null);
+const favoritesVisible = ref(false);
 const copyForm = reactive({
     topic: '',
     platform: 'xiaohongshu',
@@ -25,38 +25,20 @@ const contentTypeOptions = [
     { label: '图文', value: 'image_text' },
     { label: '产品广告', value: 'product_ad' },
 ];
-const platformLabels = {
-    xiaohongshu: '小红书',
-    douyin: '抖音',
-    moments: '朋友圈',
-};
-const contentTypeLabels = {
-    video: '视频',
-    image_text: '图文',
-    product_ad: '产品广告',
-};
 async function initialize() {
     if (!authStore.token) {
         await router.push('/auth');
         return;
     }
     await authStore.fetchProfile();
-    await loadCollections();
+    await loadFavorites();
 }
-async function loadCollections() {
+async function loadFavorites() {
     const token = authStore.token;
     if (!token) {
         return;
     }
-    const [history, favs] = await Promise.all([
-        apiFetch('/copywriting/history', {}, token),
-        apiFetch('/copywriting/favorites', {}, token),
-    ]);
-    copyHistory.value = history.map((item) => ({
-        ...item,
-        results: Array.isArray(item.results) ? item.results : [],
-    }));
-    favorites.value = favs;
+    favorites.value = await apiFetch('/copywriting/favorites', {}, token);
 }
 async function generateCopywriting() {
     const token = authStore.token;
@@ -70,7 +52,6 @@ async function generateCopywriting() {
             method: 'POST',
             body: JSON.stringify(copyForm),
         }, token);
-        await loadCollections();
     }
     catch (error) {
         errorMessage.value = error instanceof Error ? error.message : '生成失败';
@@ -93,7 +74,8 @@ async function favoriteItem(item, index) {
             styleTag: item.styleTag,
         }),
     }, token);
-    await loadCollections();
+    await loadFavorites();
+    favoritesVisible.value = true;
 }
 async function removeFavorite(id) {
     const token = authStore.token;
@@ -101,7 +83,7 @@ async function removeFavorite(id) {
         return;
     }
     await apiFetch(`/copywriting/favorites/${id}`, { method: 'DELETE' }, token);
-    await loadCollections();
+    await loadFavorites();
 }
 async function copyText(content) {
     await navigator.clipboard.writeText(content);
@@ -114,7 +96,7 @@ const __VLS_ctx = {};
 let __VLS_components;
 let __VLS_directives;
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "dashboard-shell" },
+    ...{ class: "dashboard-shell tool-page-shell" },
 });
 /** @type {[typeof AppTopbar, ]} */ ;
 // @ts-ignore
@@ -122,43 +104,55 @@ const __VLS_0 = __VLS_asFunctionalComponent(AppTopbar, new AppTopbar({
     title: "文案推荐",
     subtitle: "专注做一个功能：围绕你的主题，生成 10 条可直接使用的中文爆款开头。",
     backTo: "/",
+    compact: true,
 }));
 const __VLS_1 = __VLS_0({
     title: "文案推荐",
     subtitle: "专注做一个功能：围绕你的主题，生成 10 条可直接使用的中文爆款开头。",
     backTo: "/",
+    compact: true,
 }, ...__VLS_functionalComponentArgsRest(__VLS_0));
 __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
-    ...{ class: "summary-grid two-up-grid" },
+    ...{ class: "page-stack plain-page-stack" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "summary-card glass-card" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.strong, __VLS_intrinsicElements.strong)({});
-(__VLS_ctx.copyHistory.length);
-__VLS_asFunctionalElement(__VLS_intrinsicElements.small, __VLS_intrinsicElements.small)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "summary-card glass-card" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.strong, __VLS_intrinsicElements.strong)({});
-(__VLS_ctx.favorites.length);
-__VLS_asFunctionalElement(__VLS_intrinsicElements.small, __VLS_intrinsicElements.small)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
-    ...{ class: "feature-grid" },
+    ...{ class: "plain-section" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "glass-card feature-panel form-panel" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "panel-header" },
+    ...{ class: "section-heading" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
 __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
     ...{ class: "eyebrow" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
+__VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
+    ...{ class: "helper-text" },
+});
+const __VLS_3 = {}.ElButton;
+/** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
+// @ts-ignore
+const __VLS_4 = __VLS_asFunctionalComponent(__VLS_3, new __VLS_3({
+    ...{ 'onClick': {} },
+    ...{ class: "ghost-btn ui-btn" },
+    plain: true,
+}));
+const __VLS_5 = __VLS_4({
+    ...{ 'onClick': {} },
+    ...{ class: "ghost-btn ui-btn" },
+    plain: true,
+}, ...__VLS_functionalComponentArgsRest(__VLS_4));
+let __VLS_7;
+let __VLS_8;
+let __VLS_9;
+const __VLS_10 = {
+    onClick: (...[$event]) => {
+        __VLS_ctx.favoritesVisible = true;
+    }
+};
+__VLS_6.slots.default;
+(__VLS_ctx.favorites.length);
+var __VLS_6;
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
     ...{ class: "form-stack" },
 });
@@ -166,19 +160,19 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.label, __VLS_intrinsicElements
     ...{ class: "input-group" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({});
-const __VLS_3 = {}.ElInput;
+const __VLS_11 = {}.ElInput;
 /** @type {[typeof __VLS_components.ElInput, typeof __VLS_components.elInput, ]} */ ;
 // @ts-ignore
-const __VLS_4 = __VLS_asFunctionalComponent(__VLS_3, new __VLS_3({
+const __VLS_12 = __VLS_asFunctionalComponent(__VLS_11, new __VLS_11({
     modelValue: (__VLS_ctx.copyForm.topic),
     size: "large",
     placeholder: "例如：夏季防晒新品上市",
 }));
-const __VLS_5 = __VLS_4({
+const __VLS_13 = __VLS_12({
     modelValue: (__VLS_ctx.copyForm.topic),
     size: "large",
     placeholder: "例如：夏季防晒新品上市",
-}, ...__VLS_functionalComponentArgsRest(__VLS_4));
+}, ...__VLS_functionalComponentArgsRest(__VLS_12));
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
     ...{ class: "inline-fields" },
 });
@@ -224,10 +218,13 @@ if (__VLS_ctx.errorMessage) {
     });
     (__VLS_ctx.errorMessage);
 }
-const __VLS_7 = {}.ElButton;
+__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+    ...{ class: "section-actions" },
+});
+const __VLS_15 = {}.ElButton;
 /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
 // @ts-ignore
-const __VLS_8 = __VLS_asFunctionalComponent(__VLS_7, new __VLS_7({
+const __VLS_16 = __VLS_asFunctionalComponent(__VLS_15, new __VLS_15({
     ...{ 'onClick': {} },
     ...{ class: "primary-btn ui-btn" },
     type: "primary",
@@ -235,28 +232,28 @@ const __VLS_8 = __VLS_asFunctionalComponent(__VLS_7, new __VLS_7({
     loading: (__VLS_ctx.loading),
     disabled: (!__VLS_ctx.copyForm.topic.trim()),
 }));
-const __VLS_9 = __VLS_8({
+const __VLS_17 = __VLS_16({
     ...{ 'onClick': {} },
     ...{ class: "primary-btn ui-btn" },
     type: "primary",
     size: "large",
     loading: (__VLS_ctx.loading),
     disabled: (!__VLS_ctx.copyForm.topic.trim()),
-}, ...__VLS_functionalComponentArgsRest(__VLS_8));
-let __VLS_11;
-let __VLS_12;
-let __VLS_13;
-const __VLS_14 = {
+}, ...__VLS_functionalComponentArgsRest(__VLS_16));
+let __VLS_19;
+let __VLS_20;
+let __VLS_21;
+const __VLS_22 = {
     onClick: (__VLS_ctx.generateCopywriting)
 };
-__VLS_10.slots.default;
+__VLS_18.slots.default;
 (__VLS_ctx.loading ? '生成中...' : '一键生成 10 条文案');
-var __VLS_10;
+var __VLS_18;
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "glass-card feature-panel result-panel" },
+    ...{ class: "plain-section" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "panel-header" },
+    ...{ class: "section-heading compact-heading" },
 });
 __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
 __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
@@ -265,66 +262,42 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)(
 __VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
 if (__VLS_ctx.copyResult?.items?.length) {
     __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "result-list" },
+        ...{ class: "plain-result-list" },
     });
     for (const [item, index] of __VLS_getVForSourceType((__VLS_ctx.copyResult.items))) {
         __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
             key: (`${item.styleTag}-${index}`),
-            ...{ class: "result-card" },
+            ...{ class: "result-row" },
         });
         __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-            ...{ class: "result-card-header" },
+            ...{ class: "result-row-top" },
         });
-        const __VLS_15 = {}.ElTag;
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: "result-row-meta" },
+        });
+        const __VLS_23 = {}.ElTag;
         /** @type {[typeof __VLS_components.ElTag, typeof __VLS_components.elTag, typeof __VLS_components.ElTag, typeof __VLS_components.elTag, ]} */ ;
         // @ts-ignore
-        const __VLS_16 = __VLS_asFunctionalComponent(__VLS_15, new __VLS_15({
+        const __VLS_24 = __VLS_asFunctionalComponent(__VLS_23, new __VLS_23({
             ...{ class: "tag-chip ui-tag" },
             effect: "dark",
             round: true,
         }));
-        const __VLS_17 = __VLS_16({
+        const __VLS_25 = __VLS_24({
             ...{ class: "tag-chip ui-tag" },
             effect: "dark",
             round: true,
-        }, ...__VLS_functionalComponentArgsRest(__VLS_16));
-        __VLS_18.slots.default;
+        }, ...__VLS_functionalComponentArgsRest(__VLS_24));
+        __VLS_26.slots.default;
         (item.styleTag);
-        var __VLS_18;
+        var __VLS_26;
         __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({
             ...{ class: "muted-index" },
         });
         (index + 1);
-        __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({});
-        (item.content);
         __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
             ...{ class: "card-actions" },
         });
-        const __VLS_19 = {}.ElButton;
-        /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
-        // @ts-ignore
-        const __VLS_20 = __VLS_asFunctionalComponent(__VLS_19, new __VLS_19({
-            ...{ 'onClick': {} },
-            ...{ class: "ghost-btn ui-btn" },
-            plain: true,
-        }));
-        const __VLS_21 = __VLS_20({
-            ...{ 'onClick': {} },
-            ...{ class: "ghost-btn ui-btn" },
-            plain: true,
-        }, ...__VLS_functionalComponentArgsRest(__VLS_20));
-        let __VLS_23;
-        let __VLS_24;
-        let __VLS_25;
-        const __VLS_26 = {
-            onClick: (...[$event]) => {
-                if (!(__VLS_ctx.copyResult?.items?.length))
-                    return;
-                __VLS_ctx.copyText(item.content);
-            }
-        };
-        __VLS_22.slots.default;
-        var __VLS_22;
         const __VLS_27 = {}.ElButton;
         /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
         // @ts-ignore
@@ -345,132 +318,138 @@ if (__VLS_ctx.copyResult?.items?.length) {
             onClick: (...[$event]) => {
                 if (!(__VLS_ctx.copyResult?.items?.length))
                     return;
-                __VLS_ctx.favoriteItem(item, index);
+                __VLS_ctx.copyText(item.content);
             }
         };
         __VLS_30.slots.default;
         var __VLS_30;
+        const __VLS_35 = {}.ElButton;
+        /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
+        // @ts-ignore
+        const __VLS_36 = __VLS_asFunctionalComponent(__VLS_35, new __VLS_35({
+            ...{ 'onClick': {} },
+            ...{ class: "ghost-btn ui-btn" },
+            plain: true,
+        }));
+        const __VLS_37 = __VLS_36({
+            ...{ 'onClick': {} },
+            ...{ class: "ghost-btn ui-btn" },
+            plain: true,
+        }, ...__VLS_functionalComponentArgsRest(__VLS_36));
+        let __VLS_39;
+        let __VLS_40;
+        let __VLS_41;
+        const __VLS_42 = {
+            onClick: (...[$event]) => {
+                if (!(__VLS_ctx.copyResult?.items?.length))
+                    return;
+                __VLS_ctx.favoriteItem(item, index);
+            }
+        };
+        __VLS_38.slots.default;
+        var __VLS_38;
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
+            ...{ class: "result-row-content" },
+        });
+        (item.content);
     }
 }
 else {
     __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "empty-state" },
+        ...{ class: "empty-state simple-empty-state" },
     });
 }
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "glass-card feature-panel history-panel" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "panel-header" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
-    ...{ class: "eyebrow" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "mini-list" },
-});
-for (const [item] of __VLS_getVForSourceType((__VLS_ctx.copyHistory))) {
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
-        key: (item.id),
-        ...{ class: "mini-card" },
-    });
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.strong, __VLS_intrinsicElements.strong)({});
-    (item.topic);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.small, __VLS_intrinsicElements.small)({});
-    (__VLS_ctx.platformLabels[item.platform]);
-    (__VLS_ctx.contentTypeLabels[item.contentType]);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({});
-    (item.results?.[0]?.content || '暂无内容');
-}
-if (!__VLS_ctx.copyHistory.length) {
+const __VLS_43 = {}.ElDialog;
+/** @type {[typeof __VLS_components.ElDialog, typeof __VLS_components.elDialog, typeof __VLS_components.ElDialog, typeof __VLS_components.elDialog, ]} */ ;
+// @ts-ignore
+const __VLS_44 = __VLS_asFunctionalComponent(__VLS_43, new __VLS_43({
+    modelValue: (__VLS_ctx.favoritesVisible),
+    title: "收藏夹",
+    width: "720px",
+    ...{ class: "favorites-dialog" },
+}));
+const __VLS_45 = __VLS_44({
+    modelValue: (__VLS_ctx.favoritesVisible),
+    title: "收藏夹",
+    width: "720px",
+    ...{ class: "favorites-dialog" },
+}, ...__VLS_functionalComponentArgsRest(__VLS_44));
+__VLS_46.slots.default;
+if (__VLS_ctx.favorites.length) {
     __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "empty-state compact" },
+        ...{ class: "dialog-list" },
     });
+    for (const [item] of __VLS_getVForSourceType((__VLS_ctx.favorites))) {
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
+            key: (item.id),
+            ...{ class: "dialog-item" },
+        });
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: "result-row-top" },
+        });
+        const __VLS_47 = {}.ElTag;
+        /** @type {[typeof __VLS_components.ElTag, typeof __VLS_components.elTag, typeof __VLS_components.ElTag, typeof __VLS_components.elTag, ]} */ ;
+        // @ts-ignore
+        const __VLS_48 = __VLS_asFunctionalComponent(__VLS_47, new __VLS_47({
+            ...{ class: "tag-chip ui-tag" },
+            effect: "dark",
+            round: true,
+        }));
+        const __VLS_49 = __VLS_48({
+            ...{ class: "tag-chip ui-tag" },
+            effect: "dark",
+            round: true,
+        }, ...__VLS_functionalComponentArgsRest(__VLS_48));
+        __VLS_50.slots.default;
+        (item.styleTag);
+        var __VLS_50;
+        const __VLS_51 = {}.ElButton;
+        /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
+        // @ts-ignore
+        const __VLS_52 = __VLS_asFunctionalComponent(__VLS_51, new __VLS_51({
+            ...{ 'onClick': {} },
+            ...{ class: "text-btn ui-text-btn" },
+            text: true,
+        }));
+        const __VLS_53 = __VLS_52({
+            ...{ 'onClick': {} },
+            ...{ class: "text-btn ui-text-btn" },
+            text: true,
+        }, ...__VLS_functionalComponentArgsRest(__VLS_52));
+        let __VLS_55;
+        let __VLS_56;
+        let __VLS_57;
+        const __VLS_58 = {
+            onClick: (...[$event]) => {
+                if (!(__VLS_ctx.favorites.length))
+                    return;
+                __VLS_ctx.removeFavorite(item.id);
+            }
+        };
+        __VLS_54.slots.default;
+        var __VLS_54;
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
+            ...{ class: "result-row-content" },
+        });
+        (item.content);
+    }
 }
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "glass-card feature-panel history-panel" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "panel-header" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
-    ...{ class: "eyebrow" },
-});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-    ...{ class: "mini-list" },
-});
-for (const [item] of __VLS_getVForSourceType((__VLS_ctx.favorites))) {
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
-        key: (item.id),
-        ...{ class: "mini-card" },
-    });
+else {
     __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "result-card-header" },
-    });
-    const __VLS_35 = {}.ElTag;
-    /** @type {[typeof __VLS_components.ElTag, typeof __VLS_components.elTag, typeof __VLS_components.ElTag, typeof __VLS_components.elTag, ]} */ ;
-    // @ts-ignore
-    const __VLS_36 = __VLS_asFunctionalComponent(__VLS_35, new __VLS_35({
-        ...{ class: "tag-chip ui-tag" },
-        effect: "dark",
-        round: true,
-    }));
-    const __VLS_37 = __VLS_36({
-        ...{ class: "tag-chip ui-tag" },
-        effect: "dark",
-        round: true,
-    }, ...__VLS_functionalComponentArgsRest(__VLS_36));
-    __VLS_38.slots.default;
-    (item.styleTag);
-    var __VLS_38;
-    const __VLS_39 = {}.ElButton;
-    /** @type {[typeof __VLS_components.ElButton, typeof __VLS_components.elButton, typeof __VLS_components.ElButton, typeof __VLS_components.elButton, ]} */ ;
-    // @ts-ignore
-    const __VLS_40 = __VLS_asFunctionalComponent(__VLS_39, new __VLS_39({
-        ...{ 'onClick': {} },
-        ...{ class: "text-btn ui-text-btn" },
-        text: true,
-    }));
-    const __VLS_41 = __VLS_40({
-        ...{ 'onClick': {} },
-        ...{ class: "text-btn ui-text-btn" },
-        text: true,
-    }, ...__VLS_functionalComponentArgsRest(__VLS_40));
-    let __VLS_43;
-    let __VLS_44;
-    let __VLS_45;
-    const __VLS_46 = {
-        onClick: (...[$event]) => {
-            __VLS_ctx.removeFavorite(item.id);
-        }
-    };
-    __VLS_42.slots.default;
-    var __VLS_42;
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({});
-    (item.content);
-}
-if (!__VLS_ctx.favorites.length) {
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "empty-state compact" },
+        ...{ class: "empty-state simple-empty-state compact" },
     });
 }
+var __VLS_46;
 /** @type {__VLS_StyleScopedClasses['dashboard-shell']} */ ;
-/** @type {__VLS_StyleScopedClasses['summary-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['two-up-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['summary-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['summary-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['feature-grid']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['feature-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['form-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['panel-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['tool-page-shell']} */ ;
+/** @type {__VLS_StyleScopedClasses['page-stack']} */ ;
+/** @type {__VLS_StyleScopedClasses['plain-page-stack']} */ ;
+/** @type {__VLS_StyleScopedClasses['plain-section']} */ ;
+/** @type {__VLS_StyleScopedClasses['section-heading']} */ ;
 /** @type {__VLS_StyleScopedClasses['eyebrow']} */ ;
+/** @type {__VLS_StyleScopedClasses['helper-text']} */ ;
+/** @type {__VLS_StyleScopedClasses['ghost-btn']} */ ;
+/** @type {__VLS_StyleScopedClasses['ui-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['form-stack']} */ ;
 /** @type {__VLS_StyleScopedClasses['input-group']} */ ;
 /** @type {__VLS_StyleScopedClasses['inline-fields']} */ ;
@@ -479,16 +458,17 @@ if (!__VLS_ctx.favorites.length) {
 /** @type {__VLS_StyleScopedClasses['input-group']} */ ;
 /** @type {__VLS_StyleScopedClasses['tag-picker-group']} */ ;
 /** @type {__VLS_StyleScopedClasses['error-text']} */ ;
+/** @type {__VLS_StyleScopedClasses['section-actions']} */ ;
 /** @type {__VLS_StyleScopedClasses['primary-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['ui-btn']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['feature-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['panel-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['plain-section']} */ ;
+/** @type {__VLS_StyleScopedClasses['section-heading']} */ ;
+/** @type {__VLS_StyleScopedClasses['compact-heading']} */ ;
 /** @type {__VLS_StyleScopedClasses['eyebrow']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-list']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-card-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['plain-result-list']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row-top']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row-meta']} */ ;
 /** @type {__VLS_StyleScopedClasses['tag-chip']} */ ;
 /** @type {__VLS_StyleScopedClasses['ui-tag']} */ ;
 /** @type {__VLS_StyleScopedClasses['muted-index']} */ ;
@@ -497,29 +477,20 @@ if (!__VLS_ctx.favorites.length) {
 /** @type {__VLS_StyleScopedClasses['ui-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['ghost-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['ui-btn']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row-content']} */ ;
 /** @type {__VLS_StyleScopedClasses['empty-state']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['feature-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['history-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['panel-header']} */ ;
-/** @type {__VLS_StyleScopedClasses['eyebrow']} */ ;
-/** @type {__VLS_StyleScopedClasses['mini-list']} */ ;
-/** @type {__VLS_StyleScopedClasses['mini-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['empty-state']} */ ;
-/** @type {__VLS_StyleScopedClasses['compact']} */ ;
-/** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['feature-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['history-panel']} */ ;
-/** @type {__VLS_StyleScopedClasses['panel-header']} */ ;
-/** @type {__VLS_StyleScopedClasses['eyebrow']} */ ;
-/** @type {__VLS_StyleScopedClasses['mini-list']} */ ;
-/** @type {__VLS_StyleScopedClasses['mini-card']} */ ;
-/** @type {__VLS_StyleScopedClasses['result-card-header']} */ ;
+/** @type {__VLS_StyleScopedClasses['simple-empty-state']} */ ;
+/** @type {__VLS_StyleScopedClasses['favorites-dialog']} */ ;
+/** @type {__VLS_StyleScopedClasses['dialog-list']} */ ;
+/** @type {__VLS_StyleScopedClasses['dialog-item']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row-top']} */ ;
 /** @type {__VLS_StyleScopedClasses['tag-chip']} */ ;
 /** @type {__VLS_StyleScopedClasses['ui-tag']} */ ;
 /** @type {__VLS_StyleScopedClasses['text-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['ui-text-btn']} */ ;
+/** @type {__VLS_StyleScopedClasses['result-row-content']} */ ;
 /** @type {__VLS_StyleScopedClasses['empty-state']} */ ;
+/** @type {__VLS_StyleScopedClasses['simple-empty-state']} */ ;
 /** @type {__VLS_StyleScopedClasses['compact']} */ ;
 var __VLS_dollars;
 const __VLS_self = (await import('vue')).defineComponent({
@@ -528,14 +499,12 @@ const __VLS_self = (await import('vue')).defineComponent({
             AppTopbar: AppTopbar,
             loading: loading,
             errorMessage: errorMessage,
-            copyHistory: copyHistory,
             favorites: favorites,
             copyResult: copyResult,
+            favoritesVisible: favoritesVisible,
             copyForm: copyForm,
             platformOptions: platformOptions,
             contentTypeOptions: contentTypeOptions,
-            platformLabels: platformLabels,
-            contentTypeLabels: contentTypeLabels,
             generateCopywriting: generateCopywriting,
             favoriteItem: favoriteItem,
             removeFavorite: removeFavorite,

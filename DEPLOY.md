@@ -75,6 +75,13 @@ API_ENV_FILE=./.env.production
 API_ENV_FILE=./.env.production docker compose up --build -d
 ```
 
+说明：
+
+- 前端对外端口：`8080`
+- 后端对外端口：`3005`
+- 容器内后端仍监听 `3000`，供 Nginx 反向代理使用
+- 容器内前端仍监听 `80`
+
 ## 6. 检查状态
 
 ```bash
@@ -88,10 +95,17 @@ docker compose logs -f web
 部署成功后访问：
 
 ```text
-http://<app-server-ip>
+http://<app-server-ip>:8080
 ```
 
 前端通过 `/api` 访问后端，不需要单独暴露前端内的 API 地址。
+
+如果你要直接访问后端接口：
+
+```text
+http://<app-server-ip>:3005/api
+http://<app-server-ip>:3005/api/docs
+```
 
 ## 8. 后续更新
 
@@ -111,12 +125,20 @@ API_ENV_FILE=./.env.production docker compose up --build -d
 - 应用服务器是否能访问数据库服务器
 - `ai_tool` 数据库是否存在
 
-### 80 端口被占用
+### 8080 端口被占用
 
 检查：
 
 ```bash
-ss -lntp | grep :80
+ss -lntp | grep :8080
+```
+
+### 3005 端口被占用
+
+检查：
+
+```bash
+ss -lntp | grep :3005
 ```
 
 ### 查看后端实时日志

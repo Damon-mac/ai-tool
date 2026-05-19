@@ -10,12 +10,14 @@ const props = withDefaults(
     eyebrow?: string;
     backTo?: string;
     backLabel?: string;
+    compact?: boolean;
   }>(),
   {
     subtitle: '',
     eyebrow: 'AI Lab',
     backTo: '',
     backLabel: '返回首页',
+    compact: false,
   },
 );
 
@@ -38,7 +40,7 @@ function logout() {
 </script>
 
 <template>
-  <header class="topbar glass-card">
+  <header :class="['topbar', 'glass-card', { 'topbar-compact': compact }]">
     <div class="topbar-copy">
       <p class="eyebrow">{{ eyebrow }}</p>
       <h1>{{ title }}</h1>
