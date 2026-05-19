@@ -14,7 +14,9 @@
     "prisma:generate": "npm run prisma:generate --workspace @ai-lab/api",
     "prisma:migrate": "npm run prisma:migrate --workspace @ai-lab/api",
     "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "docker:up:prod": "API_ENV_FILE=${API_ENV_FILE:-./.env.production} docker compose up --build -d",
+    "docker:down:prod": "API_ENV_FILE=${API_ENV_FILE:-./.env.production} docker compose down"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

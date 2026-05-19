@@ -6,7 +6,8 @@ services:
     container_name: ai-lab-api
     restart: unless-stopped
     env_file:
-      - ${API_ENV_FILE:-./.env.local}
+      - path: ${API_ENV_FILE:-./.env.local}
+        required: false
     environment:
       NODE_ENV: production
       PORT: 3000
