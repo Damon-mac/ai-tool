@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppTopbar from '../components/AppTopbar.vue';
 import { apiFetch } from '../lib/api';
 import { useAuthStore } from '../stores/auth';
+import type { UnitSummary } from '@ai-lab/shared';
 
 interface CopyHistoryRecord {
   id: string;
@@ -17,49 +18,15 @@ interface TrackedStockRecord {
   id: string;
 }
 
-interface FeatureCard {
-  title: string;
-  eyebrow: string;
-  description: string;
-  path: string;
-  cta: string;
-  points: string[];
-}
-
 const router = useRouter();
 const authStore = useAuthStore();
+const loading = ref(true);
+const units = ref<UnitSummary[]>([]);
 const stats = reactive({
   copyHistory: 0,
   favorites: 0,
   trackedStocks: 0,
 });
-
-const featureCards: FeatureCard[] = [
-  {
-    title: '文案推荐',
-    eyebrow: 'Copywriting Lab',
-    description: '输入主题、平台和内容类型，一次生成 10 条不同风格的爆款开头，支持复制、收藏与历史回看。',
-    path: '/copywriting',
-    cta: '进入文案推荐',
-    points: ['10 条不同风格结果', '支持收藏与历史', '适配小红书 / 抖音 / 朋友圈'],
-  },
-  {
-    title: '股票诊断',
-    eyebrow: 'Stock Lab',
-    description: '搜索股票代码或名称，获得趋势、估值、情绪、预测区间与仓位建议，并持续跟踪分析。',
-    path: '/stocks',
-    cta: '进入股票诊断',
-    points: ['单股诊断与跟踪', '2-3 只股票仓位对比', '后续可继续扩展更多功能卡片'],
-  },
-  {
-    title: '模型配置',
-    eyebrow: 'Model Config',
-    description: '统一管理当前生效的大模型地址、API Key、模型名称和 Provider，避免混用多份 env。',
-    path: '/model-config',
-    cta: '进入模型配置',
-    points: ['页面配置优先于 env', '支持恢复 env 默认值', '适合切换 DeepSeek / Anthropic / OpenAI 兼容模型'],
-  },
-];
 
 async function initialize() {
   if (!authStore.token) {
@@ -67,7 +34,23 @@ async function initialize() {
     return;
   }
   await authStore.fetchProfile();
-  await loadSummary();
+  await Promise.all([loadUnits(), loadSummary()]);
+}
+
+async function loadUnits() {
+  const token = authStore.token;
+  if (!token) {
+    return;
+  }
+
+  loading.value = true;
+  try {
+    units.value = await apiFetch<UnitSummary[]>('/units/enabled', {}, token);
+  } catch {
+    units.value = [];
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function loadSummary() {
@@ -75,14 +58,18 @@ async function loadSummary() {
   if (!token) {
     return;
   }
-  const [history, favorites, tracked] = await Promise.all([
-    apiFetch<CopyHistoryRecord[]>('/copywriting/history', {}, token),
-    apiFetch<FavoriteRecord[]>('/copywriting/favorites', {}, token),
-    apiFetch<TrackedStockRecord[]>('/stocks/tracked', {}, token),
-  ]);
-  stats.copyHistory = history.length;
-  stats.favorites = favorites.length;
-  stats.trackedStocks = tracked.length;
+  try {
+    const [history, favorites, tracked] = await Promise.all([
+      apiFetch<CopyHistoryRecord[]>('/copywriting/history', {}, token),
+      apiFetch<FavoriteRecord[]>('/copywriting/favorites', {}, token),
+      apiFetch<TrackedStockRecord[]>('/stocks/tracked', {}, token),
+    ]);
+    stats.copyHistory = history.length;
+    stats.favorites = favorites.length;
+    stats.trackedStocks = tracked.length;
+  } catch {
+    // ignore summary errors
+  }
 }
 
 function openFeature(path: string) {
@@ -119,28 +106,42 @@ onMounted(() => {
       </div>
     </section>
 
-    <section class="feature-card-grid">
+    <section v-if="authStore.isAdmin" class="admin-actions">
+      <button class="ghost-btn" @click="router.push('/units')">管理功能单元</button>
+    </section>
+
+    <section v-if="loading" class="feature-card-grid">
+      <div class="empty-state">正在加载功能模块...</div>
+    </section>
+
+    <section v-else-if="units.length" class="feature-card-grid">
       <article
-        v-for="card in featureCards"
-        :key="card.path"
+        v-for="unit in units"
+        :key="unit.id"
         class="entry-card glass-card"
-        @click="openFeature(card.path)"
+        @click="openFeature(unit.route)"
       >
         <div>
-          <p class="eyebrow">{{ card.eyebrow }}</p>
-          <h2>{{ card.title }}</h2>
-          <p class="hero-copy">{{ card.description }}</p>
+          <p class="eyebrow">{{ unit.eyebrow || unit.slug }}</p>
+          <h2>{{ unit.name }}</h2>
+          <p class="hero-copy">{{ unit.description }}</p>
         </div>
 
         <ul class="entry-card-list">
-          <li v-for="point in card.points" :key="point">{{ point }}</li>
+          <li v-for="point in unit.points" :key="point">{{ point }}</li>
         </ul>
 
         <div class="entry-card-foot">
-          <button class="primary-btn" @click.stop="openFeature(card.path)">{{ card.cta }}</button>
+          <button class="primary-btn" @click.stop="openFeature(unit.route)">
+            {{ unit.cta || `进入${unit.name}` }}
+          </button>
           <span class="helper-text">点击卡片进入新页面</span>
         </div>
       </article>
+    </section>
+
+    <section v-else class="feature-card-grid">
+      <div class="empty-state">暂无可用的功能模块。</div>
     </section>
   </div>
 </template>

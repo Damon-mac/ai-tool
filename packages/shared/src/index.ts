@@ -32,3 +32,17 @@ export interface StockAnalysisPayload {
   yearPrediction: StockPredictionRange;
   positionSuggestion: string;
 }
+
+export interface UnitSummary {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  icon: string | null;
+  route: string;
+  enabled: boolean;
+  sortOrder: number;
+  points: string[];
+  cta: string | null;
+  eyebrow: string | null;
+}

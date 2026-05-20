@@ -4,6 +4,7 @@ import CopywritingPage from './views/CopywritingPage.vue';
 import HomePage from './views/HomePage.vue';
 import ModelConfigPage from './views/ModelConfigPage.vue';
 import StocksPage from './views/StocksPage.vue';
+import UnitsPage from './views/UnitsPage.vue';
 import { useAuthStore } from './stores/auth';
 
 export const router = createRouter({
@@ -14,6 +15,7 @@ export const router = createRouter({
     { path: '/copywriting', name: 'copywriting', component: CopywritingPage },
     { path: '/model-config', name: 'model-config', component: ModelConfigPage },
     { path: '/stocks', name: 'stocks', component: StocksPage },
+    { path: '/units', name: 'units', component: UnitsPage },
   ],
 });
 

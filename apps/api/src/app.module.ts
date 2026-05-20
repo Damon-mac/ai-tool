@@ -9,6 +9,7 @@ import { CopywritingModule } from './copywriting/copywriting.module';
 import { ModelConfigModule } from './model-config/model-config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StocksModule } from './stocks/stocks.module';
+import { UnitsModule } from './units/units.module';
 
 const workspaceEnvFiles = [resolve(process.cwd(), '..', '..', '.env.local'), resolve(process.cwd(), '..', '..', '.env')].filter((filePath) => existsSync(filePath));
 
@@ -29,6 +30,7 @@ const envFilePath = workspaceEnvFiles.length ? workspaceEnvFiles : appEnvFiles;
     AuthModule,
     CopywritingModule,
     StocksModule,
+    UnitsModule,
   ],
 })
 export class AppModule {}

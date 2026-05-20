@@ -28,7 +28,7 @@ export class AuthService {
       },
     });
 
-    return this.buildAuthResponse(user.id, user.email, user.name);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
   }
 
   async login(dto: LoginDto) {
@@ -53,13 +53,13 @@ export class AuthService {
       throw new UnauthorizedException('邮箱或密码错误');
     }
 
-    return this.buildAuthResponse(user.id, user.email, user.name);
+    return this.buildAuthResponse(user.id, user.email, user.name, user.role);
   }
 
   async profile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true, name: true, createdAt: true },
+      select: { id: true, email: true, name: true, role: true, createdAt: true },
     });
     if (!user) {
       throw new UnauthorizedException('用户不存在');
@@ -67,14 +67,15 @@ export class AuthService {
     return user;
   }
 
-  private buildAuthResponse(id: string, email: string, name?: string | null) {
-    const token = this.jwtService.sign({ sub: id, email, name });
+  private buildAuthResponse(id: string, email: string, name?: string | null, role?: string) {
+    const token = this.jwtService.sign({ sub: id, email, name, role });
     return {
       token,
       user: {
         id,
         email,
         name: name ?? null,
+        role: role ?? 'user',
       },
     };
   }

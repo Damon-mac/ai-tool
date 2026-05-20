@@ -36,12 +36,14 @@ model User {
   email                String               @unique
   passwordHash         String
   name                 String?
+  role                 String               @default("user")
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   copywritingHistories CopywritingHistory[]
   copywritingFavorites CopywritingFavorite[]
   trackedStocks        TrackedStock[]
   stockCompareHistory  StockCompareHistory[]
+  userUnits            UserUnit[]
 }
 
 model CopywritingHistory {
@@ -144,4 +146,35 @@ model StockCompareHistory {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model Unit {
+  id          String     @id @default(cuid())
+  name        String
+  slug        String     @unique
+  description String?
+  icon        String?
+  route       String
+  enabled     Boolean    @default(true)
+  sortOrder   Int        @default(0)
+  points      String[]   @default([])
+  cta         String?
+  eyebrow     String?
+  metadata    Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  userUnits   UserUnit[]
+
+  @@index([enabled, sortOrder])
+}
+
+model UserUnit {
+  id        String   @id @default(cuid())
+  userId    String
+  unitId    String
+  grantedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  unit      Unit     @relation(fields: [unitId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, unitId])
 }

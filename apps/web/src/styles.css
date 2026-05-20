@@ -467,6 +467,81 @@ small,
   gap: 20px;
 }
 
+.admin-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.unit-row {
+  cursor: pointer;
+}
+
+.unit-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.unit-disabled {
+  opacity: 0.55;
+}
+
+.unit-textarea {
+  width: 100%;
+  border: 1px solid rgba(151, 164, 191, 0.18);
+  background: rgba(8, 18, 37, 0.88);
+  color: #f8fafc;
+  border-radius: 16px;
+  padding: 14px 16px;
+  outline: none;
+  font: inherit;
+  resize: vertical;
+}
+
+.unit-checkbox-row {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 10px;
+}
+
+.unit-checkbox {
+  width: auto;
+}
+
+.unit-access-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 10, 22, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+
+.unit-access-dialog {
+  width: min(640px, calc(100vw - 40px));
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 28px;
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+}
+
+.access-grant-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.access-input {
+  flex: 1;
+}
+
+.model-row-top {
+  cursor: pointer;
+}
+
 .entry-card {
   border-radius: 28px;
   padding: 28px;

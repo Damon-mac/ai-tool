@@ -8,6 +8,7 @@ export const useAuthStore = defineStore('auth', () => {
     const user = ref(JSON.parse(localStorage.getItem(USER_KEY) || 'null'));
     const loading = ref(false);
     const isLoggedIn = computed(() => Boolean(token.value));
+    const isAdmin = computed(() => user.value?.role === 'admin');
     function setAuth(payload) {
         token.value = payload.token;
         user.value = payload.user;
@@ -68,6 +69,7 @@ export const useAuthStore = defineStore('auth', () => {
         user,
         loading,
         isLoggedIn,
+        isAdmin,
         login,
         register,
         logout,

@@ -1,62 +1,59 @@
-import { onMounted, reactive } from 'vue';
+import { onMounted, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import AppTopbar from '../components/AppTopbar.vue';
 import { apiFetch } from '../lib/api';
 import { useAuthStore } from '../stores/auth';
 const router = useRouter();
 const authStore = useAuthStore();
+const loading = ref(true);
+const units = ref([]);
 const stats = reactive({
     copyHistory: 0,
     favorites: 0,
     trackedStocks: 0,
 });
-const featureCards = [
-    {
-        title: '文案推荐',
-        eyebrow: 'Copywriting Lab',
-        description: '输入主题、平台和内容类型，一次生成 10 条不同风格的爆款开头，支持复制、收藏与历史回看。',
-        path: '/copywriting',
-        cta: '进入文案推荐',
-        points: ['10 条不同风格结果', '支持收藏与历史', '适配小红书 / 抖音 / 朋友圈'],
-    },
-    {
-        title: '股票诊断',
-        eyebrow: 'Stock Lab',
-        description: '搜索股票代码或名称，获得趋势、估值、情绪、预测区间与仓位建议，并持续跟踪分析。',
-        path: '/stocks',
-        cta: '进入股票诊断',
-        points: ['单股诊断与跟踪', '2-3 只股票仓位对比', '后续可继续扩展更多功能卡片'],
-    },
-    {
-        title: '模型配置',
-        eyebrow: 'Model Config',
-        description: '统一管理当前生效的大模型地址、API Key、模型名称和 Provider，避免混用多份 env。',
-        path: '/model-config',
-        cta: '进入模型配置',
-        points: ['页面配置优先于 env', '支持恢复 env 默认值', '适合切换 DeepSeek / Anthropic / OpenAI 兼容模型'],
-    },
-];
 async function initialize() {
     if (!authStore.token) {
         await router.push('/auth');
         return;
     }
     await authStore.fetchProfile();
-    await loadSummary();
+    await Promise.all([loadUnits(), loadSummary()]);
+}
+async function loadUnits() {
+    const token = authStore.token;
+    if (!token) {
+        return;
+    }
+    loading.value = true;
+    try {
+        units.value = await apiFetch('/units/enabled', {}, token);
+    }
+    catch {
+        units.value = [];
+    }
+    finally {
+        loading.value = false;
+    }
 }
 async function loadSummary() {
     const token = authStore.token;
     if (!token) {
         return;
     }
-    const [history, favorites, tracked] = await Promise.all([
-        apiFetch('/copywriting/history', {}, token),
-        apiFetch('/copywriting/favorites', {}, token),
-        apiFetch('/stocks/tracked', {}, token),
-    ]);
-    stats.copyHistory = history.length;
-    stats.favorites = favorites.length;
-    stats.trackedStocks = tracked.length;
+    try {
+        const [history, favorites, tracked] = await Promise.all([
+            apiFetch('/copywriting/history', {}, token),
+            apiFetch('/copywriting/favorites', {}, token),
+            apiFetch('/stocks/tracked', {}, token),
+        ]);
+        stats.copyHistory = history.length;
+        stats.favorites = favorites.length;
+        stats.trackedStocks = tracked.length;
+    }
+    catch {
+        // ignore summary errors
+    }
 }
 function openFeature(path) {
     router.push(path);
@@ -105,49 +102,88 @@ __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.
 __VLS_asFunctionalElement(__VLS_intrinsicElements.strong, __VLS_intrinsicElements.strong)({});
 (__VLS_ctx.stats.trackedStocks);
 __VLS_asFunctionalElement(__VLS_intrinsicElements.small, __VLS_intrinsicElements.small)({});
-__VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
-    ...{ class: "feature-card-grid" },
-});
-for (const [card] of __VLS_getVForSourceType((__VLS_ctx.featureCards))) {
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
-        ...{ onClick: (...[$event]) => {
-                __VLS_ctx.openFeature(card.path);
-            } },
-        key: (card.path),
-        ...{ class: "entry-card glass-card" },
-    });
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
-        ...{ class: "eyebrow" },
-    });
-    (card.eyebrow);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
-    (card.title);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
-        ...{ class: "hero-copy" },
-    });
-    (card.description);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.ul, __VLS_intrinsicElements.ul)({
-        ...{ class: "entry-card-list" },
-    });
-    for (const [point] of __VLS_getVForSourceType((card.points))) {
-        __VLS_asFunctionalElement(__VLS_intrinsicElements.li, __VLS_intrinsicElements.li)({
-            key: (point),
-        });
-        (point);
-    }
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
-        ...{ class: "entry-card-foot" },
+if (__VLS_ctx.authStore.isAdmin) {
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
+        ...{ class: "admin-actions" },
     });
     __VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
         ...{ onClick: (...[$event]) => {
-                __VLS_ctx.openFeature(card.path);
+                if (!(__VLS_ctx.authStore.isAdmin))
+                    return;
+                __VLS_ctx.router.push('/units');
             } },
-        ...{ class: "primary-btn" },
+        ...{ class: "ghost-btn" },
     });
-    (card.cta);
-    __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({
-        ...{ class: "helper-text" },
+}
+if (__VLS_ctx.loading) {
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
+        ...{ class: "feature-card-grid" },
+    });
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: "empty-state" },
+    });
+}
+else if (__VLS_ctx.units.length) {
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
+        ...{ class: "feature-card-grid" },
+    });
+    for (const [unit] of __VLS_getVForSourceType((__VLS_ctx.units))) {
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.article, __VLS_intrinsicElements.article)({
+            ...{ onClick: (...[$event]) => {
+                    if (!!(__VLS_ctx.loading))
+                        return;
+                    if (!(__VLS_ctx.units.length))
+                        return;
+                    __VLS_ctx.openFeature(unit.route);
+                } },
+            key: (unit.id),
+            ...{ class: "entry-card glass-card" },
+        });
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({});
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
+            ...{ class: "eyebrow" },
+        });
+        (unit.eyebrow || unit.slug);
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.h2, __VLS_intrinsicElements.h2)({});
+        (unit.name);
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.p, __VLS_intrinsicElements.p)({
+            ...{ class: "hero-copy" },
+        });
+        (unit.description);
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.ul, __VLS_intrinsicElements.ul)({
+            ...{ class: "entry-card-list" },
+        });
+        for (const [point] of __VLS_getVForSourceType((unit.points))) {
+            __VLS_asFunctionalElement(__VLS_intrinsicElements.li, __VLS_intrinsicElements.li)({
+                key: (point),
+            });
+            (point);
+        }
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+            ...{ class: "entry-card-foot" },
+        });
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.button, __VLS_intrinsicElements.button)({
+            ...{ onClick: (...[$event]) => {
+                    if (!!(__VLS_ctx.loading))
+                        return;
+                    if (!(__VLS_ctx.units.length))
+                        return;
+                    __VLS_ctx.openFeature(unit.route);
+                } },
+            ...{ class: "primary-btn" },
+        });
+        (unit.cta || `进入${unit.name}`);
+        __VLS_asFunctionalElement(__VLS_intrinsicElements.span, __VLS_intrinsicElements.span)({
+            ...{ class: "helper-text" },
+        });
+    }
+}
+else {
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.section, __VLS_intrinsicElements.section)({
+        ...{ class: "feature-card-grid" },
+    });
+    __VLS_asFunctionalElement(__VLS_intrinsicElements.div, __VLS_intrinsicElements.div)({
+        ...{ class: "empty-state" },
     });
 }
 /** @type {__VLS_StyleScopedClasses['dashboard-shell']} */ ;
@@ -158,6 +194,10 @@ for (const [card] of __VLS_getVForSourceType((__VLS_ctx.featureCards))) {
 /** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['summary-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
+/** @type {__VLS_StyleScopedClasses['admin-actions']} */ ;
+/** @type {__VLS_StyleScopedClasses['ghost-btn']} */ ;
+/** @type {__VLS_StyleScopedClasses['feature-card-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['empty-state']} */ ;
 /** @type {__VLS_StyleScopedClasses['feature-card-grid']} */ ;
 /** @type {__VLS_StyleScopedClasses['entry-card']} */ ;
 /** @type {__VLS_StyleScopedClasses['glass-card']} */ ;
@@ -167,13 +207,18 @@ for (const [card] of __VLS_getVForSourceType((__VLS_ctx.featureCards))) {
 /** @type {__VLS_StyleScopedClasses['entry-card-foot']} */ ;
 /** @type {__VLS_StyleScopedClasses['primary-btn']} */ ;
 /** @type {__VLS_StyleScopedClasses['helper-text']} */ ;
+/** @type {__VLS_StyleScopedClasses['feature-card-grid']} */ ;
+/** @type {__VLS_StyleScopedClasses['empty-state']} */ ;
 var __VLS_dollars;
 const __VLS_self = (await import('vue')).defineComponent({
     setup() {
         return {
             AppTopbar: AppTopbar,
+            router: router,
+            authStore: authStore,
+            loading: loading,
+            units: units,
             stats: stats,
-            featureCards: featureCards,
             openFeature: openFeature,
         };
     },
