@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
 WORKDIR /app
 COPY package.json package.json
 COPY apps/api/package.json apps/api/package.json
@@ -8,7 +8,7 @@ RUN npm install
 COPY . .
 RUN npm run build --workspace @ai-lab/shared && npm run prisma:generate --workspace @ai-lab/api && npm run build --workspace @ai-lab/api
 
-FROM node:20-alpine
+FROM node:20-slim
 WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json

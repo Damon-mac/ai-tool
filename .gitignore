@@ -19,3 +19,4 @@ packages/*/.env.local
 !apps/*/.env.template
 !packages/*/.env.template
 apps/api/generated
+*.tsbuildinfo
