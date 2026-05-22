@@ -38,6 +38,14 @@ interface TrackedStockRecord {
   market: string;
   latestPrice?: number;
   lastAnalyzedAt?: string;
+  snapshots?: Array<{
+    price: number;
+    changePercent: number;
+    amount?: number;
+    turnover?: number;
+    mainFundFlow?: number;
+    collectedAt: string;
+  }>;
   analyses: Array<{
     id: string;
     summary: string;
@@ -49,6 +57,21 @@ interface TrackedStockRecord {
 
 interface AnalyzeResult {
   trackedStock: TrackedStockRecord;
+  snapshot: {
+    price: number;
+    changePercent: number;
+    volume?: number;
+    amount?: number;
+    turnover?: number;
+    high?: number;
+    low?: number;
+    open?: number;
+    previousClose?: number;
+    marketCap?: number;
+    peRatio?: number;
+    pbRatio?: number;
+    mainFundFlow?: number;
+  };
   analysis: {
     id: string;
     summary: string;
@@ -242,6 +265,40 @@ async function deleteTracked(id: string) {
 
 async function copyText(content: string) {
   await navigator.clipboard.writeText(content);
+}
+
+function formatMetricNumber(value?: number, digits = 2) {
+  return typeof value === 'number' ? value.toFixed(digits) : '--';
+}
+
+function formatFlow(value?: number) {
+  if (typeof value !== 'number') {
+    return '--';
+  }
+
+  const abs = Math.abs(value);
+  const prefix = value >= 0 ? '+' : '-';
+  if (abs >= 100000000) {
+    return `${prefix}${(abs / 100000000).toFixed(2)} 亿`;
+  }
+  if (abs >= 10000) {
+    return `${prefix}${(abs / 10000).toFixed(2)} 万`;
+  }
+  return `${prefix}${abs.toFixed(2)}`;
+}
+
+function formatAmount(value?: number) {
+  if (typeof value !== 'number') {
+    return '--';
+  }
+
+  if (value >= 100000000) {
+    return `${(value / 100000000).toFixed(2)} 亿`;
+  }
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(2)} 万`;
+  }
+  return value.toFixed(2);
 }
 
 function logout() {
@@ -463,6 +520,13 @@ onMounted(() => {
             </div>
           </div>
           <p>{{ latestAnalysis.analysis.summary }}</p>
+          <div class="model-config-meta">
+            <span class="tag-chip">现价：{{ formatMetricNumber(latestAnalysis.snapshot.price) }}</span>
+            <span class="tag-chip">涨跌幅：{{ formatMetricNumber(latestAnalysis.snapshot.changePercent) }}%</span>
+            <span class="tag-chip">成交额：{{ formatAmount(latestAnalysis.snapshot.amount) }}</span>
+            <span class="tag-chip">换手率：{{ formatMetricNumber(latestAnalysis.snapshot.turnover) }}%</span>
+            <span class="tag-chip">主力资金流：{{ formatFlow(latestAnalysis.snapshot.mainFundFlow) }}</span>
+          </div>
           <div class="metric-grid">
             <article class="metric-card">
               <span>趋势判断</span>
@@ -479,6 +543,11 @@ onMounted(() => {
             <article class="metric-card">
               <span>仓位建议</span>
               <p>{{ latestAnalysis.analysis.positionSuggestion }}</p>
+            </article>
+            <article class="metric-card">
+              <span>关键指标</span>
+              <p>PE {{ formatMetricNumber(latestAnalysis.snapshot.peRatio) }} / PB {{ formatMetricNumber(latestAnalysis.snapshot.pbRatio) }}</p>
+              <p>高低：{{ formatMetricNumber(latestAnalysis.snapshot.high) }} / {{ formatMetricNumber(latestAnalysis.snapshot.low) }}</p>
             </article>
           </div>
           <div class="prediction-grid">
@@ -519,7 +588,9 @@ onMounted(() => {
               </div>
               <button class="text-btn" @click="deleteTracked(item.id)">删除</button>
             </div>
-            <p>最新价：{{ item.latestPrice?.toFixed(2) ?? '--' }}</p>
+            <p>最新价：{{ formatMetricNumber(item.snapshots?.[0]?.price ?? item.latestPrice) }}</p>
+            <p>成交额：{{ formatAmount(item.snapshots?.[0]?.amount) }} · 换手率：{{ formatMetricNumber(item.snapshots?.[0]?.turnover) }}%</p>
+            <p>主力资金流：{{ formatFlow(item.snapshots?.[0]?.mainFundFlow) }}</p>
             <p>{{ item.analyses?.[0]?.summary || '暂无诊断摘要' }}</p>
           </article>
           <div v-if="!trackedStocks.length" class="empty-state compact">搜索并诊断过的股票会长期保留在这里。</div>

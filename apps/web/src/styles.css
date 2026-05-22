@@ -752,6 +752,13 @@ small,
   font-size: 14px;
 }
 
+.plain-metric-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
 .inline-strip {
   margin-top: 6px;
   padding: 14px 16px;

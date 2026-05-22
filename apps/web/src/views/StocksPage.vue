@@ -18,6 +18,14 @@ interface TrackedStockRecord {
   market: string;
   latestPrice?: number;
   lastAnalyzedAt?: string;
+  snapshots?: Array<{
+    price: number;
+    changePercent: number;
+    amount?: number;
+    turnover?: number;
+    mainFundFlow?: number;
+    collectedAt: string;
+  }>;
   analyses: Array<{
     id: string;
     summary: string;
@@ -29,6 +37,21 @@ interface TrackedStockRecord {
 
 interface AnalyzeResult {
   trackedStock: TrackedStockRecord;
+  snapshot: {
+    price: number;
+    changePercent: number;
+    volume?: number;
+    amount?: number;
+    turnover?: number;
+    high?: number;
+    low?: number;
+    open?: number;
+    previousClose?: number;
+    marketCap?: number;
+    peRatio?: number;
+    pbRatio?: number;
+    mainFundFlow?: number;
+  };
   analysis: {
     id: string;
     summary: string;
@@ -57,6 +80,7 @@ const router = useRouter();
 const authStore = useAuthStore();
 const loading = ref(false);
 const errorMessage = ref('');
+const trackedStocks = ref<TrackedStockRecord[]>([]);
 const stockSearchResults = ref<StockLookupResult[]>([]);
 const latestAnalysis = ref<AnalyzeResult | null>(null);
 const latestCompare = ref<CompareResult | null>(null);
@@ -72,6 +96,16 @@ async function initialize() {
     return;
   }
   await authStore.fetchProfile();
+  await loadTrackedStocks();
+}
+
+async function loadTrackedStocks() {
+  const token = authStore.token;
+  if (!token) {
+    return;
+  }
+
+  trackedStocks.value = await apiFetch<TrackedStockRecord[]>('/stocks/tracked', {}, token);
 }
 
 async function searchStocks() {
@@ -103,6 +137,7 @@ async function analyzeStock(symbol: string, displayName?: string) {
       method: 'POST',
       body: JSON.stringify({ symbol, displayName }),
     }, token);
+    await loadTrackedStocks();
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '分析失败';
   } finally {
@@ -138,6 +173,50 @@ function toggleCompare(symbol: string) {
     return;
   }
   stockState.selectedSymbols = [...stockState.selectedSymbols, symbol];
+}
+
+async function deleteTracked(id: string) {
+  const token = authStore.token;
+  if (!token) {
+    return;
+  }
+
+  await apiFetch(`/stocks/tracked/${id}`, { method: 'DELETE' }, token);
+  await loadTrackedStocks();
+}
+
+function formatMetricNumber(value?: number, digits = 2) {
+  return typeof value === 'number' ? value.toFixed(digits) : '--';
+}
+
+function formatFlow(value?: number) {
+  if (typeof value !== 'number') {
+    return '--';
+  }
+
+  const abs = Math.abs(value);
+  const prefix = value >= 0 ? '+' : '-';
+  if (abs >= 100000000) {
+    return `${prefix}${(abs / 100000000).toFixed(2)} 亿`;
+  }
+  if (abs >= 10000) {
+    return `${prefix}${(abs / 10000).toFixed(2)} 万`;
+  }
+  return `${prefix}${abs.toFixed(2)}`;
+}
+
+function formatAmount(value?: number) {
+  if (typeof value !== 'number') {
+    return '--';
+  }
+
+  if (value >= 100000000) {
+    return `${(value / 100000000).toFixed(2)} 亿`;
+  }
+  if (value >= 10000) {
+    return `${(value / 10000).toFixed(2)} 万`;
+  }
+  return value.toFixed(2);
 }
 
 onMounted(() => {
@@ -221,6 +300,13 @@ onMounted(() => {
             </div>
           </div>
           <p class="result-row-content">{{ latestAnalysis.analysis.summary }}</p>
+          <div class="snapshot-strip plain-metric-strip">
+            <span class="tag-chip">现价：{{ formatMetricNumber(latestAnalysis.snapshot.price) }}</span>
+            <span class="tag-chip">涨跌幅：{{ formatMetricNumber(latestAnalysis.snapshot.changePercent) }}%</span>
+            <span class="tag-chip">成交额：{{ formatAmount(latestAnalysis.snapshot.amount) }}</span>
+            <span class="tag-chip">换手率：{{ formatMetricNumber(latestAnalysis.snapshot.turnover) }}%</span>
+            <span class="tag-chip">主力资金流：{{ formatFlow(latestAnalysis.snapshot.mainFundFlow) }}</span>
+          </div>
           <div class="metric-grid">
             <article class="metric-card soft-block">
               <span>趋势判断</span>
@@ -237,6 +323,17 @@ onMounted(() => {
             <article class="metric-card soft-block">
               <span>仓位建议</span>
               <p>{{ latestAnalysis.analysis.positionSuggestion }}</p>
+            </article>
+            <article class="metric-card soft-block">
+              <span>关键指标</span>
+              <p>
+                PE {{ formatMetricNumber(latestAnalysis.snapshot.peRatio) }} /
+                PB {{ formatMetricNumber(latestAnalysis.snapshot.pbRatio) }}
+              </p>
+              <p>
+                高低：{{ formatMetricNumber(latestAnalysis.snapshot.high) }} /
+                {{ formatMetricNumber(latestAnalysis.snapshot.low) }}
+              </p>
             </article>
           </div>
           <div class="prediction-grid">
@@ -258,6 +355,39 @@ onMounted(() => {
           </ul>
         </div>
         <div v-else class="empty-state simple-empty-state">搜索并分析股票后，这里会显示趋势、估值、预测和建议。</div>
+      </div>
+
+      <div class="plain-section">
+        <div class="section-heading compact-heading">
+          <div>
+            <p class="eyebrow">Tracked</p>
+            <h2>已跟踪股票</h2>
+          </div>
+        </div>
+
+        <div v-if="trackedStocks.length" class="plain-result-list">
+          <article v-for="item in trackedStocks" :key="item.id" class="result-row">
+            <div class="result-row-top">
+              <div>
+                <strong>{{ item.name }}</strong>
+                <small>{{ item.code }} · {{ item.market }}</small>
+              </div>
+              <div class="card-actions">
+                <button class="ghost-btn" @click="analyzeStock(item.code, item.name)">重新诊断</button>
+                <button class="text-btn" @click="deleteTracked(item.id)">删除</button>
+              </div>
+            </div>
+            <div class="result-row-meta compact-copy">
+              <small>最新价：{{ formatMetricNumber(item.snapshots?.[0]?.price ?? item.latestPrice) }}</small>
+              <small>涨跌幅：{{ formatMetricNumber(item.snapshots?.[0]?.changePercent) }}%</small>
+              <small>成交额：{{ formatAmount(item.snapshots?.[0]?.amount) }}</small>
+              <small>换手率：{{ formatMetricNumber(item.snapshots?.[0]?.turnover) }}%</small>
+              <small>主力资金流：{{ formatFlow(item.snapshots?.[0]?.mainFundFlow) }}</small>
+            </div>
+            <p class="result-row-content compact-copy">{{ item.analyses?.[0]?.summary || '暂无诊断摘要' }}</p>
+          </article>
+        </div>
+        <div v-else class="empty-state simple-empty-state compact">搜索并诊断过的股票会长期保留在这里。</div>
       </div>
 
       <div class="plain-section">
